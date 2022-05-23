@@ -1,0 +1,99 @@
+# syntax version.
+version: "3.9"
+
+services:
+  web:
+    image: nginx:latest
+    container_name: web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/sites/:/etc/nginx/sites-available:ro
+      - ./storage/nginx:/var/log/nginx
+#      - ./nginx/config/qmyx.conf:/etc/nginx/conf.d/qmyx.conf:ro
+      #- "./nginx/ssl:/etc/ssl"
+#      - "/mnt/d/wamp/www/qmyx-base:/usr/share/nginx/html/qmyx-base" #需要修改为你项目的目录
+    ports:
+      - "80:80"  # api http
+      - "443:443" # api https
+    restart: always
+    networks:
+      - default
+
+  mysql:
+    platform: linux/x86_64
+    container_name: mysql
+    image: mysql:5.7
+    ports:
+      - ${MYSQL_EXPOSE_PORT}:3306
+    environment: 
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ticket
+    networks:
+      - default
+    volumes:
+      - ${MYSQL_DATA}:/var/lib/mysql
+
+  redis:
+    container_name: redis
+    image: redis:5.0.9-buster
+    ports:
+      - ${REDIS_EXPOSE_PORT}:6379
+    stdin_open: true
+    tty: true
+    networks: 
+      - default
+
+#  mongo:
+#    image: mongo:latest
+#    container_name: mongo
+#    restart: always
+#    command: [--auth]
+#    ports:
+#      - ${MONGO_DB_PORT}:27017
+#    volumes:
+#      - ${MONGO_MOUNT_VOLUME}:/data/db
+#    environment:
+#      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+#      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+#    networks:
+#      - default
+
+#  ticket:
+#    build:
+#      context: ./php
+#    container_name: ticket
+#    volumes:
+#      - ${VOLUMES_TICKET}:/app
+#    tty: true
+#    networks:
+#      - default
+
+  sugar:
+    build:
+      context: ./sugar
+    container_name: sugar
+    depends_on:
+      - mysql
+    volumes:
+      - ${VOLUMES_SUGAR}:/app
+    tty: true
+    networks:
+      - default
+
+  wordpress:
+    build:
+      context: ./wordpress
+    container_name: wordpress
+    depends_on:
+      - mysql
+    volumes:
+      - ${VOLUMES_WORDPRESS}:/app
+    tty: true
+    networks:
+      - default
+
+networks:
+  default:
+    name: octane-backend
+    driver: bridge
+    
