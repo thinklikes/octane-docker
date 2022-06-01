@@ -43,20 +43,21 @@ services:
     networks: 
       - default
 
-#  mongo:
-#    image: mongo:latest
-#    container_name: mongo
-#    restart: always
-#    command: [--auth]
-#    ports:
-#      - ${MONGO_DB_PORT}:27017
-#    volumes:
-#      - ${MONGO_MOUNT_VOLUME}:/data/db
-#    environment:
-#      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
-#      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
-#    networks:
-#      - default
+  mongodb:
+    image: mongo:4.2
+    container_name: mongodb
+    restart: always
+    command: [--auth]
+    ports:
+      - ${MONGO_DB_PORT}:27017
+    volumes:
+      - ${MONGO_MOUNT_VOLUME}:/data/db
+      - ../dump:/dump
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    networks:
+      - default
 
 #  ticket:
 #    build:
@@ -68,18 +69,6 @@ services:
 #    networks:
 #      - default
 
-  sugar:
-    build:
-      context: ./sugar
-    container_name: sugar
-    depends_on:
-      - mysql
-    volumes:
-      - ${VOLUMES_SUGAR}:/app
-    tty: true
-    networks:
-      - default
-
   wordpress:
     build:
       context: ./wordpress
@@ -88,6 +77,30 @@ services:
       - mysql
     volumes:
       - ${VOLUMES_WORDPRESS}:/app
+    tty: true
+    networks:
+      - default
+
+  botrista:
+    build:
+      context: ./nodejs
+    container_name: botrista
+    depends_on:
+      - mongodb
+    volumes:
+      - ${VOLUMES_BOTRISTA}:/app
+    tty: true
+    networks:
+      - default
+
+  sales_dashboard:
+    build:
+      context: ./nodejs
+    container_name: sales_dashboard
+    depends_on:
+      - botrista
+    volumes:
+      - ${VOLUMES_SALES_DASHBOARD}:/app
     tty: true
     networks:
       - default
