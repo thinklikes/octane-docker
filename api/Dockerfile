@@ -1,4 +1,4 @@
-FROM phpswoole/swoole:4.8-php8.1-alpine
+FROM phpswoole/swoole:4.4-php7.4-alpine
 
 #本機即時檔案變動需求，線上不用
 # RUN apt-get install -y npm
@@ -18,6 +18,8 @@ RUN apk update && apk add wget git bash libressl-dev libzip-dev zip \
     && docker-php-source delete \
     && apk del .phpize-deps
 
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 #DEBUG工具
 RUN apk add iputils npm
 #net-tools
@@ -31,4 +33,4 @@ RUN echo '\
 RUN mkdir /app
 WORKDIR /app
 
-CMD ["php", "artisan", "octane:start", "--host=0.0.0.0"]
+#CMD ["php", "artisan", "octane:start", "--host=0.0.0.0"]
