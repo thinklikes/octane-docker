@@ -1,9 +1,19 @@
-FROM php:7.4-fpm-alpine
+FROM php:7.2-fpm-alpine
 
 #本機即時檔案變動需求，線上不用
 # RUN apt-get install -y npm
 # RUN npm install --save-dev chokidar
 #
+
+# Configure non-root user.
+ARG PUID=1000
+ENV PUID ${PUID}
+ARG PGID=1000
+ENV PGID ${PGID}
+
+RUN apk --no-cache add shadow && \
+    groupmod -o -g ${PGID} www-data && \
+    usermod -o -u ${PUID} -g www-data www-data -s /bin/bash
 
 RUN apk update && apk add wget git bash libressl-dev libzip-dev zip libpng libpng-dev autoconf build-base \
     && apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS \
@@ -27,11 +37,25 @@ RUN apk add iputils npm
 
 COPY aliases.sh /etc/profile.d/
 
+USER root
+
 RUN echo '\
         . /etc/profile ; \
     ' >> /root/.bashrc
 
-RUN mkdir /app
-WORKDIR /app
+USER www-data
+
+RUN echo '\
+        . /etc/profile ; \
+    ' >> ~/.bashrc
+
+WORKDIR /var/www
+
+USER root
+
+CMD ["php-fpm"]
+
+EXPOSE 9000
+
 
 #CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
