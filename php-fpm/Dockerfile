@@ -1,4 +1,4 @@
-FROM php:7.2-fpm-alpine
+FROM php:7.4-fpm-alpine
 
 #本機即時檔案變動需求，線上不用
 # RUN apt-get install -y npm
@@ -22,7 +22,7 @@ RUN apk update && apk add wget git bash libressl-dev libzip-dev zip libpng libpn
     && docker-php-ext-enable redis \
     && pecl install zip \
     && docker-php-ext-enable zip \
-    && docker-php-ext-install bcmath gd ctype pdo_mysql pcntl \
+    && docker-php-ext-install bcmath gd ctype mysqli pdo_mysql pcntl \
     && rm -f swoole.tar.gz $HOME/.composer/*-old.phar \
     && docker-php-source delete \
     && apk del .phpize-deps libpng-dev

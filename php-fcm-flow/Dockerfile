@@ -1,9 +1,11 @@
-FROM phpswoole/swoole:4.8-php8.1-alpine
+FROM php:8.1-cli-alpine3.15
 
-RUN apk update && apk add wget git bash libressl-dev libzip-dev zip \
+RUN apk update && apk add wget git bash libressl-dev libzip-dev zip rabbitmq-c-dev \
     && apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS \
     && rm -rf /tmp/pear \
     && pecl install zip \
+    && pecl install -o -f amqp \
+    && docker-php-ext-enable amqp \
     && docker-php-ext-install bcmath ctype pdo_mysql pcntl \
     && rm -f swoole.tar.gz $HOME/.composer/*-old.phar \
     && docker-php-source delete \

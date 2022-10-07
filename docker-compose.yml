@@ -23,33 +23,33 @@ services:
     networks:
       - default
 
-#  mysql:
-#    platform: linux/x86_64
-#    container_name: mysql
-#    image: mysql:5.7
-#    ports:
-#      - ${MYSQL_EXPOSE_PORT}:3306
-#    environment:
-#      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-#      MYSQL_DATABASE: ticket
-#    networks:
-#      - default
-#    volumes:
-#      - ${MYSQL_DATA}:/var/lib/mysql
-
-  mariadb:
+  mysql:
     platform: linux/x86_64
-    container_name: mariadb
-    image: mariadb:10.3
+    container_name: mysql
+    image: mysql:5.7
     ports:
-      - ${MARIADB_EXPOSE_PORT}:3306
+      - ${MYSQL_EXPOSE_PORT}:3306
     environment:
-      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD}
-      MYSQL_DATABASE: file_mgm
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: wordpress
     networks:
       - default
     volumes:
-      - ${MARIADB_DATA}:/var/lib/mariadb
+      - ${MYSQL_DATA}:/var/lib/mysql
+
+#  mariadb:
+#    platform: linux/x86_64
+#    container_name: mariadb
+#    image: mariadb:10.3
+#    ports:
+#      - ${MARIADB_EXPOSE_PORT}:3306
+#    environment:
+#      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD}
+#      MYSQL_DATABASE: file_mgm
+#    networks:
+#      - default
+#    volumes:
+#      - ${MARIADB_DATA}:/var/lib/mariadb
 
   redis:
     container_name: redis
@@ -59,6 +59,24 @@ services:
     stdin_open: true
     tty: true
     networks: 
+      - default
+
+  rabbitmq:
+    build: ./rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15671:15671"
+      - "15674:15674"
+    privileged: true
+    hostname: laradock-rabbitmq
+    volumes:
+      - ./storage/rabbitmq:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbitmq/management_agent.disable_metrics_collector.conf:/etc/rabbitmq/conf.d/management_agent.disable_metrics_collector.conf
+    depends_on:
+      - php-fcm-flow
+    networks:
       - default
 
 #  redis-cluster:
@@ -93,20 +111,23 @@ services:
       UPLOAD_LIMIT: 64M
     volumes:
       - ${VOLUMES_MAIN}:/var/www
-      - ./php-fpm/php7.2.ini:/usr/local/etc/php/php.ini
+      - ./php-fpm/php7.4.ini:/usr/local/etc/php/php.ini
     tty: true
     networks:
       - default
 
-#  admin:
-#    build:
-#      context: ./admin
-#    container_name: admin
-#    volumes:
-#      - ${VOLUMES_ADMIN}:/app
-#    tty: true
-#    networks:
-#      - default
+  php-fcm-flow:
+    build:
+      context: ./php-fcm-flow
+    container_name: php-fcm-flow
+    environment:
+      UPLOAD_LIMIT: 64M
+    volumes:
+      - ${VOLUMES_FCM_FLOW}:/var/www
+      - ./php-fpm/php7.4.ini:/usr/local/etc/php/php.ini
+    tty: true
+    networks:
+      - default
 
 networks:
   default:
