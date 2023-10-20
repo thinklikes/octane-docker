@@ -4,7 +4,6 @@ version: "3.9"
 services:
   web:
     image: nginx:latest
-    container_name: web
     volumes:
       - ${VOLUMES_MAIN}:/var/www:cached
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -25,13 +24,12 @@ services:
 
   mysql:
     platform: linux/x86_64
-    container_name: mysql
     image: mysql:5.7
     ports:
       - ${MYSQL_EXPOSE_PORT}:3306
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: wordpress
+      MYSQL_DATABASE: divediwa
     networks:
       - default
     volumes:
@@ -44,40 +42,41 @@ services:
 #    ports:
 #      - ${MARIADB_EXPOSE_PORT}:3306
 #    environment:
-#      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD}
-#      MYSQL_DATABASE: file_mgm
+#      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+#      MARIADB_DATABASE : ${MARIADB_DATABASE}
+#      MARIADB_USER: ${MARIADB_USER}
+#      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
 #    networks:
 #      - default
 #    volumes:
 #      - ${MARIADB_DATA}:/var/lib/mariadb
 
   redis:
-    container_name: redis
     image: redis:5.0.9-buster
     ports:
       - ${REDIS_EXPOSE_PORT}:6379
     stdin_open: true
     tty: true
-    networks: 
-      - default
-
-  rabbitmq:
-    build: ./rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-      - "15671:15671"
-      - "15674:15674"
-    privileged: true
-    hostname: laradock-rabbitmq
-    volumes:
-      - ./storage/rabbitmq:/var/lib/rabbitmq
-      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-      - ./rabbitmq/management_agent.disable_metrics_collector.conf:/etc/rabbitmq/conf.d/management_agent.disable_metrics_collector.conf
-    depends_on:
-      - php-fcm-flow
     networks:
       - default
+
+#  rabbitmq:
+#    build: ./rabbitmq
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
+#      - "15671:15671"
+#      - "15674:15674"
+#    privileged: true
+#    hostname: laradock-rabbitmq
+#    volumes:
+#      - ./storage/rabbitmq:/var/lib/rabbitmq
+#      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+#      - ./rabbitmq/management_agent.disable_metrics_collector.conf:/etc/rabbitmq/conf.d/management_agent.disable_metrics_collector.conf
+#    depends_on:
+#      - php-fcm-flow
+#    networks:
+#      - default
 
 #  redis-cluster:
 #    container_name: redis-cluster
@@ -104,28 +103,41 @@ services:
 #      - default
 
   php-fpm:
+    depends_on:
+      - mysql
+      - redis
     build:
       context: ./php-fpm
-    container_name: php-fpm
     environment:
       UPLOAD_LIMIT: 64M
     volumes:
       - ${VOLUMES_MAIN}:/var/www
-      - ./php-fpm/php7.4.ini:/usr/local/etc/php/php.ini
+      - ./php-fpm/php7.3.ini:/usr/local/etc/php/php.ini
     tty: true
     networks:
       - default
 
-  php-fcm-flow:
-    build:
-      context: ./php-fcm-flow
-    container_name: php-fcm-flow
+  ftpd_server:
+    image: stilliard/pure-ftpd
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes: # remember to replace /folder_on_disk/ with the path to where you want to store the files on the host machine
+      - "/folder_on_disk/data:/home/username/"
+      - "/folder_on_disk/passwd:/etc/pure-ftpd/passwd"
+    # uncomment for ssl/tls, see https://github.com/stilliard/docker-pure-ftpd#tls
+    #      - "/folder_on_disk/ssl:/etc/ssl/private/"
+    # or ssl/tls with Let's Encrypt (cert and key as two files)
+    #      - "/etc/letsencrypt/live/<your_server>/cert.pem:/etc/ssl/private/pure-ftpd-cert.pem"
+    #      - "/etc/letsencrypt/live/<your_server>/privkey.pem:/etc/ssl/private/pure-ftpd-key.pem"
     environment:
-      UPLOAD_LIMIT: 64M
-    volumes:
-      - ${VOLUMES_FCM_FLOW}:/var/www
-      - ./php-fpm/php7.4.ini:/usr/local/etc/php/php.ini
-    tty: true
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: username
+      FTP_USER_PASS: mypass
+      FTP_USER_HOME: /home/username
+    # also for ssl/tls:
+    #      ADDED_FLAGS: "--tls=2"
+    restart: always
     networks:
       - default
 

@@ -22,7 +22,7 @@ RUN apk update && apk add wget git bash libressl-dev libzip-dev zip \
 RUN apk add iputils npm
 #net-tools
 
-COPY aliases.sh /etc/profile.d/
+COPY *.sh /etc/profile.d/
 
 RUN echo '\
         . /etc/profile ; \
